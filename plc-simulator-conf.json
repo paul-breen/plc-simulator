@@ -1,0 +1,44 @@
+{
+    "listener": {
+        "host": "localhost",
+        "port": 5555,
+        "backlog": 10
+    },
+    "fieldbus_manager": {
+        "modules": [
+            {
+                "module": "plcsimulator.ModbusModule",
+                "class": "ModbusModule",
+                "id": "modbus"
+            }
+        ]
+    },
+    "logging": {
+        "version": 1,
+        "handlers": {
+            "file": {
+                "class": "logging.FileHandler",
+                "filename": "/dev/null",
+                "mode": "a",
+                "formatter": "default"
+            },
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "brief"
+            }
+        },
+        "root": {
+            "level": "INFO",
+            "handlers": ["console", "file"]
+        },
+        "formatters": {
+            "default": {
+                "format": "%(asctime)s %(levelname)s %(threadName)s %(message)s",
+                "datefmt": "%Y-%m-%dT%H:%M:%S"
+            },
+            "brief": {
+                "format": "%(levelname)s %(threadName)s %(message)s"
+            }
+        }
+    }
+}
