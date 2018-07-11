@@ -9,7 +9,9 @@
             {
                 "module": "plcsimulator.ModbusModule",
                 "class": "ModbusModule",
-                "id": "modbus"
+                "id": "modbus",
+                "conf": {
+                }
             }
         ]
     },
