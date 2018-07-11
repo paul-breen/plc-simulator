@@ -9,6 +9,8 @@ class BaseFieldbusModule(object):
     def __init__(self, id):
         self.id = id
         self.conf = {}
+        self.memory_manager = None
+        self.conn = None
 
     def get_id(self):
         """
@@ -19,7 +21,7 @@ class BaseFieldbusModule(object):
 
         return self.id
 
-    def init(self, conf={}):
+    def init(self, conf={}, memory_manager=None):
         """
         Initialise the module
 
@@ -27,4 +29,5 @@ class BaseFieldbusModule(object):
         """
 
         self.conf = conf
+        self.memory_manager = memory_manager
 

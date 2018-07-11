@@ -10,10 +10,23 @@
                 "module": "plcsimulator.ModbusModule",
                 "class": "ModbusModule",
                 "id": "modbus",
-                "conf": {
-                }
+                "conf": {}
             }
         ]
+    },
+    "memory_manager": {
+        "memspace": {
+            "blen": 0,
+            "w16len": 800,
+            "w32len": 0,
+            "w64len": 0
+        },
+        "transforms": {
+            "bits": [],
+            "words16": [],
+            "words32": [],
+            "words64": []
+        }
     },
     "logging": {
         "version": 1,

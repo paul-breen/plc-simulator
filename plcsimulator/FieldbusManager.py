@@ -14,8 +14,9 @@ class FieldbusManager(object):
     Instantiates fieldbus-specific modules according to the configuration
     """
 
-    def __init__(self, modules=[]):
+    def __init__(self, modules=[], memory_manager=None):
         self.modules = modules
+        self.memory_manager = memory_manager
         self.modules_table = {}
 
     def init_modules(self):
@@ -29,7 +30,7 @@ class FieldbusManager(object):
             m = importlib.import_module(item['module'])
             c = getattr(m, item['class'])
             o = c(item['id'])
-            o.init(conf=item['conf'])
+            o.init(conf=item['conf'], memory_manager=self.memory_manager)
             self.modules_table.update({o.get_id(): o})
 
     def get_module(self, id):
@@ -45,6 +46,13 @@ class FieldbusManager(object):
         return self.modules_table[id]
 
     def create_new_backend(self, current_conn, address):
+        logging.info("New backend to service client on {}".format(address))
+
+        plc = self.get_module('modbus')
+        plc.conn = current_conn
+        plc.process_request()
+
+    def test_create_new_backend(self, current_conn, address):
         logging.info("New backend to service client on {}".format(address))
 
         data = None

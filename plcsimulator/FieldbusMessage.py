@@ -21,14 +21,13 @@ class FieldbusMessage(object):
 
         :param start: The start byte offset in the buffer
         :type start: int
-        :param end: The end byte offset + 1 in the buffer.  The addtion of 1
-                    is required because we are using an array slice
+        :param end: The end byte offset in the buffer
         :type end: int
-        :returns: The (end + 1 - start)-byte word
+        :returns: The (end - start)-byte word
         :rtype int:
         """
 
-        buf_bytes = self.buf[start:end]
+        buf_bytes = self.buf[start:end+1]
         word = int.from_bytes(buf_bytes, byteorder=self.DEFAULTS['byteorder'])
 
         return word
