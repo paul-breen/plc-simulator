@@ -8,6 +8,7 @@
 class MemoryManager(object):
 
     DEFAULTS = {
+        'byteorder': 'big',
         'memspace': {
             'bits': [],
             'words16': [],
@@ -25,10 +26,34 @@ class MemoryManager(object):
         self.transforms = transforms
 
     def init_transforms(self):
-        pass
+        ### TEMP. DURING DEV. ###
+        for i in range(0, 100):
+            data = i.to_bytes(2, byteorder=self.DEFAULTS['byteorder'])
+            self.set_data(section='words16', addr=i, n=2, data=data)
+
+    def get_section_size(self, section):
+        if section == 'bits':
+            size = 1
+        elif section == 'words16':
+            size = 2
+        elif section == 'words32':
+            size = 4
+        elif section == 'words64':
+            size = 8
+        else:
+            raise ValueError("Unknown memspace section: {}".format(section))
+
+        return size
 
     def get_data(self, section=None, addr=None, n=None):
-        data = self.memspace[section][addr:n+1]
+        size = self.get_section_size(section)
+        data = self.memspace[section][addr*size:addr*size+n*size]
+
+        return data
+
+    def set_data(self, section=None, addr=None, n=None, data=None):
+        size = self.get_section_size(section)
+        self.memspace[section][addr*size:addr*size+n*size] = data
 
         return data
 

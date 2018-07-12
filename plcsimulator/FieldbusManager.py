@@ -46,33 +46,9 @@ class FieldbusManager(object):
         return self.modules_table[id]
 
     def create_new_backend(self, current_conn, address):
-        logging.info("New backend to service client on {}".format(address))
+        logging.debug("New backend to service client on {}".format(address))
 
         plc = self.get_module('modbus')
         plc.conn = current_conn
         plc.process_request()
-
-    def test_create_new_backend(self, current_conn, address):
-        logging.info("New backend to service client on {}".format(address))
-
-        data = None
-
-        while True:
-            data = current_conn.recv(2048)
-            data = data.rstrip()
-
-            if data == 'quit':
-                current_conn.shutdown(1)
-                current_conn.close()
-                break
-            elif data == 'stop':
-                current_conn.shutdown(1)
-                current_conn.close()
-                exit()
-            elif data:
-                current_conn.send(data)
-                name = threading.current_thread().name
-                print('{}: {}'.format(name, data))
-            elif not data:
-                break
 
