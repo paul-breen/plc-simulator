@@ -6,8 +6,6 @@ This project provides an extensible PLC simulation environment.  The MemoryManag
 
 The command line invocation is simple, requiring only the configuration file:
 
-Create a `.env` file, in the same directory as the application file (`App.py`).  This `.env` file should contain the path to the Flask app, and the path to the mimics configuration file (`mimics.json`).  Then from that directory, run:
-
 ```bash
 python plc-simulator.py plc-simulator-conf.json
 ```
