@@ -23,12 +23,18 @@
         }
     },
     "io_manager": {
-        "transforms": {
-            "bits": [],
-            "words16": [],
-            "words32": [],
-            "words64": []
-        }
+        "simulations": [
+            {
+                "memspace": {"section": "words16", "addr": 0, "nwords": 2},
+                "function": {"type": "counter"},
+                "pause": 2
+            },
+            {
+                "memspace": {"section": "words16", "addr": 2, "nwords": 1},
+                "function": {"type": "binary"},
+                "pause": 2
+            }
+        ]
     },
     "logging": {
         "version": 1,
