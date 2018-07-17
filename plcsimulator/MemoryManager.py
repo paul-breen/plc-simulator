@@ -5,6 +5,8 @@
 # Date:    2018-07-11
 ###############################################################################
 
+from threading import Lock
+
 class MemoryManager(object):
 
     DEFAULTS = {
@@ -18,6 +20,7 @@ class MemoryManager(object):
     }
 
     def __init__(self, blen=0, w16len=0, w32len=0, w64len=0, transforms={}):
+        self.lock = Lock()
         self.memspace = self.DEFAULTS['memspace'].copy()
         self.memspace['bits'] = bytearray(blen)
         self.memspace['words16'] = bytearray(w16len * 2)
@@ -47,13 +50,17 @@ class MemoryManager(object):
 
     def get_data(self, section=None, addr=None, n=None):
         size = self.get_section_size(section)
-        data = self.memspace[section][addr*size:addr*size+n*size]
+
+        with self.lock:
+            data = self.memspace[section][addr*size:addr*size+n*size]
 
         return data
 
     def set_data(self, section=None, addr=None, n=None, data=None):
         size = self.get_section_size(section)
-        self.memspace[section][addr*size:addr*size+n*size] = data
+
+        with self.lock:
+            self.memspace[section][addr*size:addr*size+n*size] = data
 
         return data
 
