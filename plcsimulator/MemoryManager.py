@@ -41,19 +41,19 @@ class MemoryManager(object):
 
         return word_len
 
-    def get_data(self, section=None, addr=None, n=None):
+    def get_data(self, section=None, addr=None, nwords=None):
         wlen = self.get_section_word_len(section)
 
         with self.lock:
-            data = self.memspace[section][addr*wlen:addr*wlen+n*wlen]
+            data = self.memspace[section][addr*wlen:addr*wlen+nwords*wlen]
 
         return data
 
-    def set_data(self, section=None, addr=None, n=None, data=None):
+    def set_data(self, section=None, addr=None, nwords=None, data=None):
         wlen = self.get_section_word_len(section)
 
         with self.lock:
-            self.memspace[section][addr*wlen:addr*wlen+n*wlen] = data
+            self.memspace[section][addr*wlen:addr*wlen+nwords*wlen] = data
 
         return data
 

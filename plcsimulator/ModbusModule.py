@@ -71,7 +71,7 @@ class ModbusModule(BaseFieldbusModule):
         addr = request.make_word(8, 9)
         nwords = request.make_word(10, 11)
 
-        data = self.memory_manager.get_data(section=self.DEFAULTS['word_mem_section'], addr=addr, n=nwords)
+        data = self.memory_manager.get_data(section=self.DEFAULTS['word_mem_section'], addr=addr, nwords=nwords)
         data_nbytes = nwords * self.DEFAULTS['word_nbytes']
 
         logging.debug('{} addr = {}, nwords = {}, data_nbytes = {}, data = {}'.format(log_prefix, addr, nwords, data_nbytes, data))
@@ -94,7 +94,7 @@ class ModbusModule(BaseFieldbusModule):
         data_nbytes = request.buf[12]
         data = request.buf[13:13+data_nbytes+1]
 
-        self.memory_manager.set_data(section=self.DEFAULTS['word_mem_section'], addr=addr, n=nwords, data=data)
+        self.memory_manager.set_data(section=self.DEFAULTS['word_mem_section'], addr=addr, nwords=nwords, data=data)
 
         logging.debug('{} addr = {}, nwords = {}, data_nbytes = {}, data = {}'.format(log_prefix, addr, nwords, data_nbytes, data))
 
