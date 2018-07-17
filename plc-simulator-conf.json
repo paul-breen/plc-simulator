@@ -20,7 +20,9 @@
             "w16len": 800,
             "w32len": 0,
             "w64len": 0
-        },
+        }
+    },
+    "io_manager": {
         "transforms": {
             "bits": [],
             "words16": [],

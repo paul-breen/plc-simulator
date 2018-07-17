@@ -19,20 +19,13 @@ class MemoryManager(object):
         }
     }
 
-    def __init__(self, blen=0, w16len=0, w32len=0, w64len=0, transforms={}):
+    def __init__(self, blen=0, w16len=0, w32len=0, w64len=0):
         self.lock = Lock()
         self.memspace = self.DEFAULTS['memspace'].copy()
         self.memspace['bits'] = bytearray(blen)
         self.memspace['words16'] = bytearray(w16len * 2)
         self.memspace['words32'] = bytearray(w32len * 4)
         self.memspace['words64'] = bytearray(w64len * 8)
-        self.transforms = transforms
-
-    def init_transforms(self):
-        ### TEMP. DURING DEV. ###
-        for i in range(0, 100):
-            data = i.to_bytes(2, byteorder=self.DEFAULTS['byteorder'])
-            self.set_data(section='words16', addr=i, n=2, data=data)
 
     def get_section_word_len(self, section):
         if section == 'bits':

@@ -9,6 +9,7 @@ from plcsimulator.Configurator import Configurator
 from plcsimulator.Listener import Listener
 from plcsimulator.FieldbusManager import FieldbusManager
 from plcsimulator.MemoryManager import MemoryManager
+from plcsimulator.IoManager import IoManager
 
 class App(object):
     """
@@ -24,8 +25,10 @@ class App(object):
         self.conf = self.configurator.get_configuration()
         self.configurator.setup_logging()
 
-        self.memory_manager = MemoryManager(**self.conf['memory_manager']['memspace'], transforms=self.conf['memory_manager']['transforms'])
-        self.memory_manager.init_transforms()
+        self.memory_manager = MemoryManager(**self.conf['memory_manager']['memspace'])
+
+        self.io_manager = IoManager(self.conf['io_manager'], memory_manager=self.memory_manager)
+        self.io_manager.init_io()
 
         self.fieldbus_manager = FieldbusManager(**self.conf['fieldbus_manager'], memory_manager=self.memory_manager)
         self.fieldbus_manager.init_modules()
