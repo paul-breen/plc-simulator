@@ -34,33 +34,33 @@ class MemoryManager(object):
             data = i.to_bytes(2, byteorder=self.DEFAULTS['byteorder'])
             self.set_data(section='words16', addr=i, n=2, data=data)
 
-    def get_section_size(self, section):
+    def get_section_word_len(self, section):
         if section == 'bits':
-            size = 1
+            word_len = 1
         elif section == 'words16':
-            size = 2
+            word_len = 2
         elif section == 'words32':
-            size = 4
+            word_len = 4
         elif section == 'words64':
-            size = 8
+            word_len = 8
         else:
             raise ValueError("Unknown memspace section: {}".format(section))
 
-        return size
+        return word_len
 
     def get_data(self, section=None, addr=None, n=None):
-        size = self.get_section_size(section)
+        wlen = self.get_section_word_len(section)
 
         with self.lock:
-            data = self.memspace[section][addr*size:addr*size+n*size]
+            data = self.memspace[section][addr*wlen:addr*wlen+n*wlen]
 
         return data
 
     def set_data(self, section=None, addr=None, n=None, data=None):
-        size = self.get_section_size(section)
+        wlen = self.get_section_word_len(section)
 
         with self.lock:
-            self.memspace[section][addr*size:addr*size+n*size] = data
+            self.memspace[section][addr*wlen:addr*wlen+n*wlen] = data
 
         return data
 
