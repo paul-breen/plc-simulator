@@ -8,11 +8,16 @@
 import logging
 import threading
 import time
+import math
 
 class IoManager(object):
 
     DEFAULTS = {
-        'byteorder': 'big'
+        'byteorder': 'big',
+        'wave': {
+            'types': ['sin','sine','cos','cosine','sawtooth','square'],
+            'resolution': 1e3
+        }
     }
 
     def __init__(self, conf, memory_manager=None):
@@ -35,19 +40,21 @@ class IoManager(object):
         id = ''
 
         try:
+            id = conf['id']
+        except KeyError:
+            pass
+
+        if not id:
             # Generate an ID for this simulation from its configuration
             mem_id = ':'.join([str(x) for x in conf['memspace'].values()])
             func_id = ':'.join([str(x) for x in conf['function'].values()])
             id = ':'.join([mem_id, func_id])
-        except KeyError:
-            pass
 
         return id
 
     def run_simulation(self, conf):
         sources = {
-            'counter': 0,
-            'binary': 0
+            'counter': 0
         }
 
         while True:
@@ -62,27 +69,45 @@ class IoManager(object):
     def simulate_data(self, conf, sources):
         data = bytearray(0)
 
-        try:
-            wlen = self.memory_manager.get_section_word_len(conf['memspace']['section'])
-            nwords = int(conf['memspace']['nwords'])
+        wlen = self.memory_manager.get_section_word_len(conf['memspace']['section'])
+        nwords = int(conf['memspace']['nwords'])
 
-            if conf['function']['type'] == 'counter':
-                value = sources['counter']
-                sources['counter'] += 1
-                b = value.to_bytes(wlen, byteorder=self.DEFAULTS['byteorder'])
+        if conf['function']['type'] == 'counter':
+            value = sources['counter']
+            sources['counter'] = (value + 1) % 2**(wlen * 8)
+            data = self.value_to_bytes(value, nwords, wlen)
+        elif conf['function']['type'] == 'binary':
+            value = sources['counter']
+            sources['counter'] = (value + 1) % 2
+            data = self.value_to_bytes(value, nwords, wlen)
+        elif conf['function']['type'] == 'static':
+            value = int(conf['function']['value'])
+            data = self.value_to_bytes(value, nwords, wlen)
+        elif conf['function']['type'] in self.DEFAULTS['wave']['types']:
+            res = int(self.DEFAULTS['wave']['resolution'])
+            value = sources['counter']
+            sources['counter'] = (value + 1) % (2 * res + 1)
 
-                for i in range(nwords):
-                    data += b
-            elif conf['function']['type'] == 'binary':
-                value = sources['binary']
-                sources['binary'] = int(not value)
-                b = value.to_bytes(wlen, byteorder=self.DEFAULTS['byteorder'])
+            if conf['function']['type'] in ['sin','sine']:
+                y = int(math.sin((value / res) * math.pi) * res + res)
+            elif conf['function']['type'] in ['cos','cosine']:
+                y = int(math.cos((value / res) * math.pi) * res + res)
+            elif conf['function']['type'] == 'sawtooth':
+                y = value
+            elif conf['function']['type'] == 'square':
+                w = math.sin((value / res) * math.pi)
+                y = 1 * res if w < 0.0 else 1 * res + res
 
-                for i in range(nwords):
-                    data += b
+            data = self.value_to_bytes(y, nwords, wlen)
 
-        except KeyError:
-            pass
+        return data
+
+    def value_to_bytes(self, value, nwords, wlen):
+        data = bytearray(0)
+        b = value.to_bytes(wlen, byteorder=self.DEFAULTS['byteorder'])
+
+        for i in range(nwords):
+            data += b
 
         return data
 

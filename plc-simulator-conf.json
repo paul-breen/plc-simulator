@@ -25,14 +25,39 @@
     "io_manager": {
         "simulations": [
             {
-                "memspace": {"section": "words16", "addr": 0, "nwords": 2},
+                "memspace": {"section": "words16", "addr": 0, "nwords": 1},
                 "function": {"type": "counter"},
-                "pause": 2
+                "pause": 0.001
+            },
+            {
+                "memspace": {"section": "words16", "addr": 1, "nwords": 1},
+                "function": {"type": "binary"},
+                "pause": 5
             },
             {
                 "memspace": {"section": "words16", "addr": 2, "nwords": 1},
-                "function": {"type": "binary"},
-                "pause": 2
+                "function": {"type": "static", "value": 321},
+                "pause": 60
+            },
+            {
+                "memspace": {"section": "words16", "addr": 3, "nwords": 1},
+                "function": {"type": "sine"},
+                "pause": 1
+            },
+            {
+                "memspace": {"section": "words16", "addr": 4, "nwords": 1},
+                "function": {"type": "cosine"},
+                "pause": 1
+            },
+            {
+                "memspace": {"section": "words16", "addr": 5, "nwords": 1},
+                "function": {"type": "sawtooth"},
+                "pause": 1
+            },
+            {
+                "memspace": {"section": "words16", "addr": 6, "nwords": 1},
+                "function": {"type": "square"},
+                "pause": 1
             }
         ]
     },
