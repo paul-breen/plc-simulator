@@ -96,7 +96,7 @@ class IoManager(object):
                 y = value
             elif conf['function']['type'] == 'square':
                 w = math.sin((value / res) * math.pi)
-                y = 1 * res if w < 0.0 else 1 * res + res
+                y = res if w < 0.0 else 2 * res
 
             data = self.value_to_bytes(y, nwords, wlen)
 
