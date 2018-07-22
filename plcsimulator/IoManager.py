@@ -17,6 +17,11 @@ class IoManager(object):
         'wave': {
             'types': ['sin','sine','cos','cosine','sawtooth','square'],
             'resolution': 1e3
+        },
+        'range': {                # N.B.: stop is calculated from word length
+            'types': ['counter'],
+            'start': 0,
+            'step': 1
         }
     }
 
@@ -52,10 +57,40 @@ class IoManager(object):
 
         return id
 
+    def define_range(self, conf):
+        range_params = []
+        wlen = self.memory_manager.get_section_word_len(conf['memspace']['section'])
+        start = self.DEFAULTS['range']['start']
+        stop = 2**(wlen * 8)
+        step = self.DEFAULTS['range']['step']
+
+        try:
+            range_params = conf['function']['range']
+        except KeyError:
+            pass
+
+        if len(range_params) == 0:
+            range_params = [start, stop, step]
+        elif len(range_params) == 1:                  # Only stop given
+            range_params.append(range_params[0])
+            range_params[0] = start
+            range_params.append(step)
+        elif len(range_params) == 2:
+            if range_params[1] < range_params[0]:     # Decrementing range
+                range_params.append(-step)
+            else:
+                range_params.append(step)
+
+        conf['function']['range'] = range_params
+
+        return range_params
+
     def run_simulation(self, conf):
         sources = {
             'counter': 0
         }
+
+        self.init_simulation(conf, sources)
 
         while True:
             data = self.simulate_data(conf, sources)
@@ -66,6 +101,13 @@ class IoManager(object):
             except KeyError:
                 pass
 
+    def init_simulation(self, conf, sources):
+        # If constrained to a range, ensure the range is fully specified and
+        # that the sources are suitably initialised
+        if conf['function']['type'] in self.DEFAULTS['range']['types']:
+            self.define_range(conf)
+            sources['counter'] = conf['function']['range'][0]
+
     def simulate_data(self, conf, sources):
         data = bytearray(0)
 
@@ -74,7 +116,7 @@ class IoManager(object):
 
         if conf['function']['type'] == 'counter':
             value = sources['counter']
-            sources['counter'] = (value + 1) % 2**(wlen * 8)
+            sources['counter'] = self.get_next_range_value(conf['function']['range'], value)
             data = self.value_to_bytes(value, nwords, wlen)
         elif conf['function']['type'] == 'binary':
             value = sources['counter']
@@ -110,4 +152,16 @@ class IoManager(object):
             data += b
 
         return data
+
+    def get_next_range_value(self, range_params, value):
+         next_value = value + range_params[2]
+
+         if range_params[2] < 0:
+             if next_value <= range_params[1]:
+                 next_value = range_params[0]
+         else:
+             if next_value >= range_params[1]:
+                 next_value = range_params[0]
+
+         return next_value
 
