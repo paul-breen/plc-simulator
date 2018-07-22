@@ -31,7 +31,7 @@ class IoManager(object):
 
     def init_io(self):
         for conf in self.conf['simulations']:
-            id = self.get_simulation_id(conf)
+            id = self.define_id(conf)
             logging.info('Starting simulation {}'.format(id))
 
             # N.B.: args expects a tuple, hence the trailing comma.  Setting
@@ -41,7 +41,7 @@ class IoManager(object):
             simulation.daemon = True
             simulation.start()
 
-    def get_simulation_id(self, conf):
+    def define_id(self, conf):
         id = ''
 
         try:
@@ -54,6 +54,7 @@ class IoManager(object):
             mem_id = ':'.join([str(x) for x in conf['memspace'].values()])
             func_id = ':'.join([str(x) for x in conf['function'].values()])
             id = ':'.join([mem_id, func_id])
+            conf['id'] = id
 
         return id
 

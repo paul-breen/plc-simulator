@@ -60,16 +60,19 @@
                 "pause": 0.001
             },
             {
+                "id": "range_counter",
                 "memspace": {"section": "words16", "addr": 7, "nwords": 1},
                 "function": {"type": "counter", "range": [10]},
                 "pause": 0.1
             },
             {
+                "id": "dec_range_counter",
                 "memspace": {"section": "words16", "addr": 8, "nwords": 1},
                 "function": {"type": "counter", "range": [10, 0]},
                 "pause": 0.1
             },
             {
+                "id": "step_range_counter",
                 "memspace": {"section": "words16", "addr": 9, "nwords": 1},
                 "function": {"type": "counter", "range": [0, 10, 2]},
                 "pause": 0.1
