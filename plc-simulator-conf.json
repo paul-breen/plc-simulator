@@ -42,22 +42,22 @@
             {
                 "memspace": {"section": "words16", "addr": 3, "nwords": 1},
                 "function": {"type": "sine"},
-                "pause": 1
+                "pause": 0.001
             },
             {
                 "memspace": {"section": "words16", "addr": 4, "nwords": 1},
                 "function": {"type": "cosine"},
-                "pause": 1
+                "pause": 0.001
             },
             {
                 "memspace": {"section": "words16", "addr": 5, "nwords": 1},
                 "function": {"type": "sawtooth"},
-                "pause": 1
+                "pause": 0.001
             },
             {
                 "memspace": {"section": "words16", "addr": 6, "nwords": 1},
                 "function": {"type": "square"},
-                "pause": 1
+                "pause": 0.001
             }
         ]
     },
