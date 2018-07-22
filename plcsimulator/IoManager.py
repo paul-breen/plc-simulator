@@ -9,6 +9,7 @@ import logging
 import threading
 import time
 import math
+import random
 
 class IoManager(object):
 
@@ -19,9 +20,15 @@ class IoManager(object):
             'resolution': 1e3
         },
         'range': {                # N.B.: stop is calculated from word length
-            'types': ['counter'],
+            'types': ['counter','randrange'],
             'start': 0,
             'step': 1
+        },
+        'random': {
+            'types': ['randrange','lognormal','uniform'],
+            'resolution': 1e3,
+            'lognormal': {'mu': 0, 'sigma': 1},
+            'uniform': {'a': 0, 'b': 1}
         }
     }
 
@@ -86,6 +93,16 @@ class IoManager(object):
 
         return range_params
 
+    def define_parameter(self, name, conf, default):
+        param = default[name]
+
+        try:
+            param = conf[name]
+        except KeyError:
+            pass
+
+        return param
+
     def run_simulation(self, conf):
         sources = {
             'counter': 0
@@ -108,6 +125,20 @@ class IoManager(object):
         if conf['function']['type'] in self.DEFAULTS['range']['types']:
             self.define_range(conf)
             sources['counter'] = conf['function']['range'][0]
+
+        if conf['function']['type'] in self.DEFAULTS['random']['types']:
+            try:
+                random.seed(a=conf['function']['seed'])
+            except KeyError:
+                pass
+
+        # Fallback to default parameters if not specified in configuration
+        if conf['function']['type'] == 'lognormal':
+            conf['function']['mu'] = self.define_parameter('mu', conf['function'], self.DEFAULTS['random']['lognormal'])
+            conf['function']['sigma'] = self.define_parameter('sigma', conf['function'], self.DEFAULTS['random']['lognormal'])
+        elif conf['function']['type'] == 'uniform':
+            conf['function']['a'] = self.define_parameter('a', conf['function'], self.DEFAULTS['random']['uniform'])
+            conf['function']['b'] = self.define_parameter('b', conf['function'], self.DEFAULTS['random']['uniform'])
 
     def simulate_data(self, conf, sources):
         data = bytearray(0)
@@ -142,7 +173,21 @@ class IoManager(object):
                 y = res if w < 0.0 else 2 * res
 
             data = self.value_to_bytes(y, nwords, wlen)
+        elif conf['function']['type'] == 'randrange':
+            value = random.randrange(*conf['function']['range'])
+            data = self.value_to_bytes(value, nwords, wlen)
+        elif conf['function']['type'] in self.DEFAULTS['random']['types']:
+            res = int(self.DEFAULTS['random']['resolution'])
 
+            if conf['function']['type'] == 'lognormal':
+                w = random.lognormvariate(conf['function']['mu'], conf['function']['sigma'])
+                y = int(w * res) % 2**(wlen * 8)  # Avoid OverflowError
+            elif conf['function']['type'] == 'uniform':
+                w = random.uniform(conf['function']['a'], conf['function']['b'])
+                y = int(w * res)
+
+            data = self.value_to_bytes(y, nwords, wlen)
+ 
         return data
 
     def value_to_bytes(self, value, nwords, wlen):

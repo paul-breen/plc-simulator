@@ -76,6 +76,24 @@
                 "memspace": {"section": "words16", "addr": 9, "nwords": 1},
                 "function": {"type": "counter", "range": [0, 10, 2]},
                 "pause": 0.1
+            },
+            {
+                "id": "randrange",
+                "memspace": {"section": "words16", "addr": 10, "nwords": 1},
+                "function": {"type": "randrange", "range": [50, 61]},
+                "pause": 1
+            },
+            {
+                "id": "lognormal",
+                "memspace": {"section": "words16", "addr": 11, "nwords": 1},
+                "function": {"type": "lognormal"},
+                "pause": 1
+            },
+            {
+                "id": "uniform",
+                "memspace": {"section": "words16", "addr": 12, "nwords": 1},
+                "function": {"type": "uniform"},
+                "pause": 1
             }
         ]
     },
