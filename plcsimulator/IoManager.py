@@ -187,6 +187,8 @@ class IoManager(object):
                 y = int(w * res)
 
             data = self.value_to_bytes(y, nwords, wlen)
+        elif conf['function']['type'] == 'copy':
+            data = self.memory_manager.get_data(**conf['source']['memspace'])
  
         return data
 

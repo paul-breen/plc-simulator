@@ -94,6 +94,39 @@
                 "memspace": {"section": "words16", "addr": 12, "nwords": 1},
                 "function": {"type": "uniform"},
                 "pause": 1
+            },
+            {
+                "id": "copy_source_0",
+                "memspace": {"section": "words16", "addr": 13, "nwords": 1},
+                "function": {"type": "binary"},
+                "pause": 15
+            },
+            {
+                "id": "copy_source_1",
+                "memspace": {"section": "words16", "addr": 14, "nwords": 1},
+                "function": {"type": "binary"},
+                "pause": 60
+            },
+            {
+                "id": "copy_source_2",
+                "memspace": {"section": "words16", "addr": 15, "nwords": 1},
+                "function": {"type": "binary"},
+                "pause": 20
+            },
+            {
+                "id": "copy_source_3",
+                "memspace": {"section": "words16", "addr": 16, "nwords": 1},
+                "function": {"type": "counter", "range": [80, 0]},
+                "pause": 10
+            },
+            {
+                "id": "copy_dest",
+                "memspace": {"section": "words16", "addr": 20, "nwords": 4},
+                "source": {
+                    "memspace": {"section": "words16", "addr": 13, "nwords": 4}
+                },
+                "function": {"type": "copy"},
+                "pause": 1
             }
         ]
     },
