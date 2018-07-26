@@ -117,7 +117,7 @@
                 "id": "copy_source_3",
                 "memspace": {"section": "words16", "addr": 16, "nwords": 1},
                 "function": {"type": "counter", "range": [80, 0]},
-                "pause": 10
+                "pause": 1
             },
             {
                 "id": "copy_dest",
@@ -126,6 +126,28 @@
                     "memspace": {"section": "words16", "addr": 13, "nwords": 4}
                 },
                 "function": {"type": "copy"},
+                "pause": 1
+            },
+            {
+                "id": "transform_on",
+                "memspace": {"section": "words16", "addr": 24, "nwords": 1},
+                "source": {
+                    "memspace": {"section": "words16", "addr": 16, "nwords": 1}
+                },
+                "function": {"type": "transform",
+                             "transform": {"in": [0, 10], "out": 1}
+                },
+                "pause": 1
+            },
+            {
+                "id": "transform_off",
+                "memspace": {"section": "words16", "addr": 24, "nwords": 1},
+                "source": {
+                    "memspace": {"section": "words16", "addr": 16, "nwords": 1}
+                },
+                "function": {"type": "transform",
+                             "transform": {"in": [11, 80], "out": 0}
+                },
                 "pause": 1
             }
         ]

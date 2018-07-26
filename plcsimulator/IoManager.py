@@ -112,7 +112,9 @@ class IoManager(object):
 
         while True:
             data = self.simulate_data(conf, sources)
-            self.memory_manager.set_data(**conf['memspace'], data=data)
+
+            if data is not None:
+                self.memory_manager.set_data(**conf['memspace'], data=data)
 
             try:
                 time.sleep(conf['pause'])
@@ -189,6 +191,15 @@ class IoManager(object):
             data = self.value_to_bytes(y, nwords, wlen)
         elif conf['function']['type'] == 'copy':
             data = self.memory_manager.get_data(**conf['source']['memspace'])
+        elif conf['function']['type'] == 'transform':
+            buf = self.memory_manager.get_data(**conf['source']['memspace'])
+            word = int.from_bytes(buf, byteorder=self.DEFAULTS['byteorder'])
+            value = self.transform_item(word, conf['function']['transform'])
+
+            if value is not None:
+                data = self.value_to_bytes(value, nwords, wlen)
+            else:
+                data = None
  
         return data
 
@@ -212,4 +223,22 @@ class IoManager(object):
                  next_value = range_params[0]
 
          return next_value
+
+    def transform_item(self, state, transform):
+        item = None
+        t_in = transform['in']
+        t_out = transform['out']
+
+        # If the transform output is configured as 'null', then it takes the
+        # value of the state variable
+        if t_out is None:
+            t_out = state
+
+        if isinstance(t_in, (list, tuple)):
+            if t_in[0] <= state <= t_in[1]:
+                item = t_out
+        elif state == t_in:
+                item = t_out
+
+        return item
 
