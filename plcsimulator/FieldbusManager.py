@@ -8,6 +8,7 @@
 import logging
 import importlib
 import threading
+import copy
 
 class FieldbusManager(object):
     """
@@ -46,9 +47,21 @@ class FieldbusManager(object):
         return self.modules_table[id]
 
     def create_new_backend(self, current_conn, address):
+        """
+        Create a new backend to service the incoming client request
+
+        Creates a copy of the required fieldbus module and then this copy
+        services the client request directly
+
+        :param current_conn: The client socket
+        :type current_conn: socket object
+        :param address: The address bound to the client end of the connection
+        :type address: address object
+        """
+
         logging.debug("New backend to service client on {}".format(address))
 
-        plc = self.get_module('modbus')
+        plc = copy.copy(self.get_module('modbus'))
         plc.conn = current_conn
         plc.process_request()
 
