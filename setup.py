@@ -8,7 +8,7 @@
 from setuptools import setup
 
 setup(name='plc-simulator',
-      version='0.1',
+      version='0.2',
       description='PLC Simulator',
       url='https://github.com/paul-breen/plc-simulator',
       author='Paul Breen',
