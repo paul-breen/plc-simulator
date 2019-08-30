@@ -27,14 +27,14 @@ class FieldbusManager(object):
 
         # Dynamically load, instantiate and initialise the fieldbus classes
         for item in self.modules:
-            logging.info("Initialising module: {}".format(item['id']))
+            logging.info("Initialising module {}".format(item['id']))
             m = importlib.import_module(item['module'])
             c = getattr(m, item['class'])
             o = c(item['id'])
             o.init(conf=item['conf'], memory_manager=self.memory_manager)
-            self.modules_table.update({o.get_id(): o})
+            self.modules_table.update({item['port']: o})
 
-    def get_module(self, id):
+    def get_module_by_id(self, id):
         """
         Get the module for the given ID
 
@@ -44,7 +44,23 @@ class FieldbusManager(object):
         :rtype: fieldbus object
         """
 
-        return self.modules_table[id]
+        for v in self.modules_table.values():
+            if v.get_id() == id:
+                return v
+
+        return None
+
+    def get_module_by_port(self, port):
+        """
+        Get the module for the given port
+
+        :param port: The port that the module is mapped to
+        :type port: str
+        :returns: The module
+        :rtype: fieldbus object
+        """
+
+        return self.modules_table[port]
 
     def create_new_backend(self, current_conn, address):
         """
@@ -61,7 +77,10 @@ class FieldbusManager(object):
 
         logging.debug("New backend to service client on {}".format(address))
 
-        plc = copy.copy(self.get_module('modbus'))
+        # Get the listener port and map it to the corresponding fieldbus module
+        port = current_conn.getsockname()[1]
+
+        plc = copy.copy(self.get_module_by_port(port))
         plc.conn = current_conn
         plc.process_request()
 
