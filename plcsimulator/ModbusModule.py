@@ -29,7 +29,19 @@ class ModbusModule(BaseFieldbusModule):
                 'base_addr': 40000
             }
         },
-        'exception_flag': 0x80
+        'exception_flag': 0x80,
+        'exception_codes': {
+            'illegal_function': 0x01,
+            'illegal_data_address': 0x02,
+            'illegal_data_value': 0x03,
+            'illegal_response_length': 0x04,
+            'acknowledge': 0x05,
+            'slave_device_busy': 0x06,
+            'negative_acknowledge': 0x07,
+            'memory_parity_error': 0x08,
+            'mbp_gw_path_unavailable': 0x0a,
+            'mbp_gw_device_no_response': 0x0b
+        }
     }
 
     def recv_request_fragment(self, request, nbytes):
@@ -100,6 +112,7 @@ class ModbusModule(BaseFieldbusModule):
 
     def service_unknown_request(self, request):
         request.buf[7] |= self.DEFAULTS['exception_flag']
+        request.buf[8] = self.DEFAULTS['exception_codes']['illegal_function']
         self.conn.sendall(request.buf)
 
         return request
