@@ -10,6 +10,7 @@
                 "module": "plcsimulator.ModbusModule",
                 "class": "ModbusModule",
                 "id": "modbus",
+                "port": 5555,
                 "conf": {}
             }
         ]
