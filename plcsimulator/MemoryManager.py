@@ -46,7 +46,8 @@ class MemoryManager(object):
         start_addr = addr*wlen
         end_addr = addr*wlen+nwords*wlen
 
-        if start_addr < 0 or end_addr >= len(self.memspace[section]):
+        # Slice doesn't include its end so end_addr can be length of memspace
+        if start_addr < 0 or end_addr > len(self.memspace[section]):
             raise IndexError("Memspace section {} bounds exceeded: {}:{}".format(section, start_addr, end_addr))
 
     def get_data(self, section=None, addr=None, nwords=None):
