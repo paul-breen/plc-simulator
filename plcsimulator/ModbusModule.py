@@ -78,6 +78,13 @@ class ModbusModule(BaseFieldbusModule):
         else:
             self.service_unknown_request(request)
 
+    def construct_exception_response(self, request, excode):
+        response = request
+        response.buf[7] |= self.DEFAULTS['exception_flag']
+        response.buf[8] = self.DEFAULTS['exception_codes'][excode]
+
+        return response
+
     def service_read_holding_registers_request(self, request):
         log_prefix = '{}: {}:'.format(self.id, self.DEFAULTS['functions']['0x03']['name'])
         addr = request.make_word(8, 9)
@@ -96,9 +103,7 @@ class ModbusModule(BaseFieldbusModule):
         except IndexError as e:
             # Request exceeds bounds of the memory space.  Inform the client
             logging.error(e)
-            response = request
-            response.buf[7] |= self.DEFAULTS['exception_flag']
-            response.buf[8] = self.DEFAULTS['exception_codes']['illegal_data_address']
+            response = self.construct_exception_response(request, 'illegal_data_address')
 
         logging.debug('{} response: {}'.format(log_prefix, response.buf))
         self.conn.sendall(response.buf)
@@ -112,18 +117,30 @@ class ModbusModule(BaseFieldbusModule):
         data_nbytes = request.buf[12]
         data = request.buf[13:13+data_nbytes+1]
 
-        self.memory_manager.set_data(section=self.DEFAULTS['word_mem_section'], addr=addr, nwords=nwords, data=data)
+        try:
+            self.memory_manager.set_data(section=self.DEFAULTS['word_mem_section'], addr=addr, nwords=nwords, data=data)
 
-        logging.debug('{} addr = {}, nwords = {}, data_nbytes = {}, data = {}'.format(log_prefix, addr, nwords, data_nbytes, data))
+            logging.debug('{} addr = {}, nwords = {}, data_nbytes = {}, data = {}'.format(log_prefix, addr, nwords, data_nbytes, data))
+
+            response = FieldbusMessage(12)
+            response.buf[0:12] = request.buf[0:12]
+        except IndexError as e:
+            # Request exceeds bounds of the memory space.  Inform the client
+            logging.error(e)
+            response = self.construct_exception_response(request, 'illegal_data_address')
+
+        logging.debug('{} response: {}'.format(log_prefix, response.buf))
+        self.conn.sendall(response.buf)
+
+        return response
 
     def service_unknown_request(self, request):
         log_prefix = '{}: {}:'.format(self.id, 'Unknown or unsupported function')
         logging.error('{} function = {:#04x}'.format(log_prefix, request.buf[7]))
 
         # Unknown or unsupported function.  Inform the client
-        request.buf[7] |= self.DEFAULTS['exception_flag']
-        request.buf[8] = self.DEFAULTS['exception_codes']['illegal_function']
-        self.conn.sendall(request.buf)
+        response = self.construct_exception_response(request, 'illegal_function')
+        self.conn.sendall(response.buf)
 
-        return request
+        return response
 
