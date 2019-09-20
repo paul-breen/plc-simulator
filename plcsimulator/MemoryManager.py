@@ -41,8 +41,18 @@ class MemoryManager(object):
 
         return word_len
 
+    def check_bounds(self, section=None, addr=None, nwords=None):
+        wlen = self.get_section_word_len(section)
+        start_addr = addr*wlen
+        end_addr = addr*wlen+nwords*wlen
+
+        if start_addr < 0 or end_addr >= len(self.memspace[section]):
+            raise IndexError("Memspace section {} bounds exceeded: {}:{}".format(section, start_addr, end_addr))
+
     def get_data(self, section=None, addr=None, nwords=None):
         wlen = self.get_section_word_len(section)
+
+        self.check_bounds(section=section, addr=addr, nwords=nwords)
 
         with self.lock:
             data = self.memspace[section][addr*wlen:addr*wlen+nwords*wlen]
@@ -51,6 +61,8 @@ class MemoryManager(object):
 
     def set_data(self, section=None, addr=None, nwords=None, data=None):
         wlen = self.get_section_word_len(section)
+
+        self.check_bounds(section=section, addr=addr, nwords=nwords)
 
         with self.lock:
             self.memspace[section][addr*wlen:addr*wlen+nwords*wlen] = data
