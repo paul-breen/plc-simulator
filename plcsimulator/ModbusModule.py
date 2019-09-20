@@ -83,16 +83,22 @@ class ModbusModule(BaseFieldbusModule):
         addr = request.make_word(8, 9)
         nwords = request.make_word(10, 11)
 
-        data = self.memory_manager.get_data(section=self.DEFAULTS['word_mem_section'], addr=addr, nwords=nwords)
-        data_nbytes = nwords * self.DEFAULTS['word_nbytes']
+        try:
+            data = self.memory_manager.get_data(section=self.DEFAULTS['word_mem_section'], addr=addr, nwords=nwords)
+            data_nbytes = nwords * self.DEFAULTS['word_nbytes']
 
-        logging.debug('{} addr = {}, nwords = {}, data_nbytes = {}, data = {}'.format(log_prefix, addr, nwords, data_nbytes, data))
+            logging.debug('{} addr = {}, nwords = {}, data_nbytes = {}, data = {}'.format(log_prefix, addr, nwords, data_nbytes, data))
 
-        response = FieldbusMessage(9 + data_nbytes)
-
-        response.buf[0:8] = request.buf[0:8]
-        response.buf[8] = data_nbytes
-        response.buf[9:9+data_nbytes+1] = data
+            response = FieldbusMessage(9 + data_nbytes)
+            response.buf[0:8] = request.buf[0:8]
+            response.buf[8] = data_nbytes
+            response.buf[9:9+data_nbytes+1] = data
+        except IndexError as e:
+            # Request exceeds bounds of the memory space.  Inform the client
+            logging.error(e)
+            response = request
+            response.buf[7] |= self.DEFAULTS['exception_flag']
+            response.buf[8] = self.DEFAULTS['exception_codes']['illegal_data_address']
 
         logging.debug('{} response: {}'.format(log_prefix, response.buf))
         self.conn.sendall(response.buf)
@@ -111,6 +117,10 @@ class ModbusModule(BaseFieldbusModule):
         logging.debug('{} addr = {}, nwords = {}, data_nbytes = {}, data = {}'.format(log_prefix, addr, nwords, data_nbytes, data))
 
     def service_unknown_request(self, request):
+        log_prefix = '{}: {}:'.format(self.id, 'Unknown or unsupported function')
+        logging.error('{} function = {:#04x}'.format(log_prefix, request.buf[7]))
+
+        # Unknown or unsupported function.  Inform the client
         request.buf[7] |= self.DEFAULTS['exception_flag']
         request.buf[8] = self.DEFAULTS['exception_codes']['illegal_function']
         self.conn.sendall(request.buf)
