@@ -1,5 +1,7 @@
 """
-PLC simulation environment
+Package for defining and running a PLC simulation environment
+
+This is the package main.  It instantiates and runs the the PLC simulation environment as defined in a given configuration file.
 """
 
 import argparse

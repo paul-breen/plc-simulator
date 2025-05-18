@@ -5,16 +5,32 @@
 # Date:    2018-07-11
 ###############################################################################
 
+"""
+PLC simulator fieldbus message module
+
+This module contains the fieldbus message class.  This provides generic fieldbus message functions.
+"""
+
 import time
 import socket
 
 class FieldbusMessage(object):
+    """
+    Fieldbus message class for the PLC simulator
+    """
 
     DEFAULTS = {
         'byteorder': 'big'
     }
 
     def __init__(self, blen):
+        """
+        Constructor
+
+        :param blen: The fieldbus message buffer length in bytes
+        :type blen: int
+        """
+
         self.blen = blen
         self.buf = bytearray(blen)
 

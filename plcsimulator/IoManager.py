@@ -5,6 +5,15 @@
 # Date:    2018-07-17
 ###############################################################################
 
+"""
+PLC simulator IO manager module
+
+This module contains the IO manager class.  It manages:
+
+* Initialising each IO simulation specified in the configuration.
+* Running each IO simulation according to its parameters.
+"""
+
 import logging
 import threading
 import time
@@ -12,6 +21,9 @@ import math
 import random
 
 class IoManager(object):
+    """
+    IO manager for the PLC simulator
+    """
 
     DEFAULTS = {
         'byteorder': 'big',
@@ -33,10 +45,23 @@ class IoManager(object):
     }
 
     def __init__(self, conf, memory_manager=None):
+        """
+        Constructor
+
+        :param conf: The IO manager configuration section
+        :type conf: dict
+        :param memory_manager: The instantiated memory_manager object
+        :type memory_manager: plcsimulator.MemoryManager.MemoryManager
+        """
+
         self.conf = conf
         self.memory_manager = memory_manager
 
     def init_io(self):
+        """
+        Initialise the IO simulations from the configuration
+        """
+
         for conf in self.conf['simulations']:
             id = self.define_id(conf)
             logging.info('Starting simulation {}'.format(id))
@@ -49,6 +74,18 @@ class IoManager(object):
             simulation.start()
 
     def define_id(self, conf):
+        """
+        Get the ID for the simulation or construct one if not present
+
+        If the simulation configuration doesn't include an 'id' key, we
+        construct a unique ID from the simulation's memory space and function.
+
+        :param conf: The IO manager configuration section
+        :type conf: dict
+        :returns: The simulation ID
+        :rtype: str
+        """
+
         id = ''
 
         try:
@@ -66,6 +103,17 @@ class IoManager(object):
         return id
 
     def define_range(self, conf):
+        """
+        Construct the fully-specified range parameters for the simulation
+
+        The range will contain a start, step, and stop parameter.
+
+        :param conf: The IO manager configuration section
+        :type conf: dict
+        :returns: The simulation range parameters
+        :rtype: list
+        """
+
         range_params = []
         wlen = self.memory_manager.get_section_word_len(conf['memspace']['section'])
         start = self.DEFAULTS['range']['start']
@@ -94,6 +142,19 @@ class IoManager(object):
         return range_params
 
     def define_parameter(self, name, conf, default):
+        """
+        Get a parameter of the simulation function or a default if not present
+
+        :param name: The parameter name
+        :type name: str
+        :param conf: The function configuration
+        :type conf: dict
+        :param default: The parameter default
+        :type default: str
+        :returns: The simulation function parameter value
+        :rtype: number
+        """
+
         param = default[name]
 
         try:
@@ -104,6 +165,15 @@ class IoManager(object):
         return param
 
     def run_simulation(self, conf):
+        """
+        Run the simulation according to its configuration
+
+        This is the entry point for this simulation's thread
+
+        :param conf: The simulation configuration
+        :type conf: dict
+        """
+
         sources = {
             'counter': 0
         }
@@ -122,6 +192,15 @@ class IoManager(object):
                 pass
 
     def init_simulation(self, conf, sources):
+        """
+        Initialise the simulation according to its configuration
+
+        :param conf: The simulation configuration
+        :type conf: dict
+        :param sources: Seeds for the simulation values
+        :type sources: dict
+        """
+
         # If constrained to a range, ensure the range is fully specified and
         # that the sources are suitably initialised
         if conf['function']['type'] in self.DEFAULTS['range']['types']:
@@ -143,6 +222,18 @@ class IoManager(object):
             conf['function']['b'] = self.define_parameter('b', conf['function'], self.DEFAULTS['random']['uniform'])
 
     def simulate_data(self, conf, sources):
+        """
+        Generate data for the simulation according to its configuration
+
+        :param conf: The simulation configuration
+        :type conf: dict
+        :param sources: The simulation value sources (counters)
+        :type sources: dict
+        :returns: The simulation data values or None if the simulation didn't
+        generate any data
+        :rtype: bytearray or None
+        """
+
         data = bytearray(0)
 
         wlen = self.memory_manager.get_section_word_len(conf['memspace']['section'])
@@ -204,6 +295,19 @@ class IoManager(object):
         return data
 
     def value_to_bytes(self, value, nwords, wlen):
+        """
+        Convert the simulated data value to bytes
+
+        :param value: The simulation data value
+        :type value: number
+        :param nwords: The number of words that the value should fill
+        :type nwords: int
+        :param wlen: The length in bytes of a word
+        :type wlen: int
+        :returns: The simulation data value as bytes
+        :rtype: bytearray
+        """
+
         data = bytearray(0)
         b = value.to_bytes(wlen, byteorder=self.DEFAULTS['byteorder'])
 
@@ -213,18 +317,49 @@ class IoManager(object):
         return data
 
     def get_next_range_value(self, range_params, value):
-         next_value = value + range_params[2]
+        """
+        Get the next range value from the given range parameters
 
-         if range_params[2] < 0:
-             if next_value <= range_params[1]:
-                 next_value = range_params[0]
-         else:
-             if next_value >= range_params[1]:
-                 next_value = range_params[0]
+        :param range_params: The simulation range parameters
+        :type range_params: list
+        :param value: The current value from the range
+        :type value: number
+        :returns: The next value in the range
+        :rtype: number
+        """
 
-         return next_value
+        next_value = value + range_params[2]
+
+        if range_params[2] < 0:
+            if next_value <= range_params[1]:
+                next_value = range_params[0]
+        else:
+            if next_value >= range_params[1]:
+                next_value = range_params[0]
+
+        return next_value
 
     def transform_item(self, state, transform):
+        """
+        Transform the state according to the given transform rules
+
+        The state is the current value of the simulation as a word of the
+        simulation's memory space.  This word provides input to the rules
+        specified in transform.  The word is transformed according to the
+        rules and thereby provides the simulation's data value.
+
+        If the transform output is configured as 'null', then the returned
+        data value is simply the value of the state variable.  This is a
+        simple passthrough rule.
+
+        :param state: The current state of the simulation as a word value
+        :type state: number
+        :param transform: The simulation transform rules
+        :type transform: dict
+        :returns: The input state transformed to the output state
+        :rtype: number
+        """
+
         item = None
         t_in = transform['in']
         t_out = transform['out']

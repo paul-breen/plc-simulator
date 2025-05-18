@@ -5,6 +5,15 @@
 # Date:    2018-07-10
 ###############################################################################
 
+"""
+PLC simulator configurator module
+
+This module contains the configuration manager class.  It manages:
+
+* Reading in the given simulation configuration file.
+* Setting up any logging specified in the configuration file.
+"""
+
 import json
 import logging
 import logging.config

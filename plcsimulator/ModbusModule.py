@@ -5,6 +5,12 @@
 # Date:    2018-07-10
 ###############################################################################
 
+"""
+PLC simulator fieldbus module: Modbus
+
+This module contains a fieldbus-specific class for simulating a Modbus PLC.
+"""
+
 import logging
 import socket
 
@@ -12,6 +18,9 @@ from plcsimulator.BaseFieldbusModule import BaseFieldbusModule
 from plcsimulator.FieldbusMessage import FieldbusMessage
 
 class ModbusModule(BaseFieldbusModule):
+    """
+    Modbus class for the PLC simulator
+    """
 
     DEFAULTS = {
         'min_msg_len': 12,
@@ -45,6 +54,15 @@ class ModbusModule(BaseFieldbusModule):
     }
 
     def recv_request_fragment(self, request, nbytes):
+        """
+        Receive a fragment of an incoming message into the buffer
+
+        :param request: The fieldbus message buffer to receive the message on
+        :type request: plcsimulator.FieldbusMessage.FieldbusMessage
+        :param nbytes: The total required bytes of the whole message
+        :type nbytes: int
+        """
+
         request.recv_fragment(self.conn, nbytes, flags=socket.MSG_WAITALL)
 
         if len(request.buf) < nbytes:
@@ -53,6 +71,10 @@ class ModbusModule(BaseFieldbusModule):
         return request
 
     def get_request(self):
+        """
+        Get an incoming request message from a client over the socket
+        """
+
         request = FieldbusMessage(0)
 
         # Get the minimum message that is common to all Modbus requests
@@ -69,6 +91,13 @@ class ModbusModule(BaseFieldbusModule):
         return request
 
     def process_request(self):
+        """
+        Process an incoming request message
+
+        The request is passed to a function to handle the Modbus function
+        contained in the request message
+        """
+
         request = self.get_request()
 
         if request.buf[7] == self.DEFAULTS['functions']['0x03']['code']:
@@ -79,6 +108,17 @@ class ModbusModule(BaseFieldbusModule):
             self.service_unknown_request(request)
 
     def construct_exception_response(self, request, excode):
+        """
+        Construct a response message to provide details of an exception
+
+        :param request: The incoming request that caused the exception
+        :type request: plcsimulator.FieldbusMessage.FieldbusMessage
+        :param excode: The exception code
+        :type excode: int
+        :returns: The exception response to return to the client
+        :rtype: plcsimulator.FieldbusMessage.FieldbusMessage
+        """
+
         response = request
         response.buf[7] |= self.DEFAULTS['exception_flag']
         response.buf[8] = self.DEFAULTS['exception_codes'][excode]
@@ -86,6 +126,20 @@ class ModbusModule(BaseFieldbusModule):
         return response
 
     def service_read_holding_registers_request(self, request):
+        """
+        Handle a read-holding-registers request
+
+        * Read the specified registers from this PLC's memory space.
+        * Return the Modbus response to the client.
+        * The response contains the values of the specified registers.
+        * Return a Modbus exception response if the request was invalid.
+
+        :param request: The incoming request message
+        :type request: plcsimulator.FieldbusMessage.FieldbusMessage
+        :returns: The response to return to the client
+        :rtype: plcsimulator.FieldbusMessage.FieldbusMessage
+        """
+
         log_prefix = '{}: {}:'.format(self.id, self.DEFAULTS['functions']['0x03']['name'])
         addr = request.make_word(8, 9)
         nwords = request.make_word(10, 11)
@@ -111,6 +165,19 @@ class ModbusModule(BaseFieldbusModule):
         return response
 
     def service_preset_multiple_registers_request(self, request):
+        """
+        Handle a preset-multiple-registers request
+
+        * Write the specified register values to this PLC's memory space.
+        * Return the Modbus response to the client.
+        * Return a Modbus exception response if the request was invalid.
+
+        :param request: The incoming request message
+        :type request: plcsimulator.FieldbusMessage.FieldbusMessage
+        :returns: The response to return to the client
+        :rtype: plcsimulator.FieldbusMessage.FieldbusMessage
+        """
+
         log_prefix = '{}: {}:'.format(self.id, self.DEFAULTS['functions']['0x10']['name'])
         addr = request.make_word(8, 9)
         nwords = request.make_word(10, 11)
@@ -135,6 +202,17 @@ class ModbusModule(BaseFieldbusModule):
         return response
 
     def service_unknown_request(self, request):
+        """
+        Handle an unknown request
+
+        * Return a Modbus exception response.
+
+        :param request: The incoming request message
+        :type request: plcsimulator.FieldbusMessage.FieldbusMessage
+        :returns: The response to return to the client
+        :rtype: plcsimulator.FieldbusMessage.FieldbusMessage
+        """
+
         log_prefix = '{}: {}:'.format(self.id, 'Unknown or unsupported function')
         logging.error('{} function = {:#04x}'.format(log_prefix, request.buf[7]))
 

@@ -5,8 +5,25 @@
 # Date:    2018-07-10
 ###############################################################################
 
+"""
+PLC simulator base fieldbus module
+
+This module contains the base class for fieldbus classes.  Fieldbus-specific classes should inherit from this class.
+"""
+
 class BaseFieldbusModule(object):
+    """
+    Base class for fieldbus classes
+    """
+
     def __init__(self, id):
+        """
+        Constructor
+
+        :param id: The class instance ID
+        :type id: str
+        """
+
         self.id = id
         self.conf = {}
         self.memory_manager = None
@@ -14,18 +31,21 @@ class BaseFieldbusModule(object):
 
     def get_id(self):
         """
-        Get this module's ID
+        Get this class instance ID
 
-        :returns: The module ID
+        :returns: The class instance ID
         """
 
         return self.id
 
     def init(self, conf={}, memory_manager=None):
         """
-        Initialise the module
+        Initialise the fieldbus-specific PLC class instance
 
-        :returns: The module
+        :param conf: The class configuration section
+        :type conf: dict
+        :param memory_manager: The instantiated memory_manager object
+        :type memory_manager: plcsimulator.MemoryManager.MemoryManager
         """
 
         self.conf = conf
