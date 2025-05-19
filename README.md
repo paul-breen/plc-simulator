@@ -2,6 +2,14 @@
 
 This project provides an extensible PLC simulation environment.  The MemoryManager provides a configurable linear memory space that is independent of any particular model of PLC.  The IoManager supports a number of simulation functions that can be specified to update memory locations in the MemoryManager's memory space.  The FieldbusManager instantiates configured fieldbus-specific objects that simulate the request/response protocols of PLCs.  The fieldbus-specific object to handle incoming requests is mapped by TCP listening port.  The Listener provides a TCP/IP interface with which clients, such as the plc-data-server (PDS), can connect and query simulated PLCs.
 
+## Install
+
+The package can be installed from PyPI (note the package distribution name):
+
+```bash
+$ pip install plc-simulator
+```
+
 ## Running the application
 
 The general usage is to call the plcsimulator package main followed by a configuration file.  As a convenience, the package installs a console script called `plcsimulator` that wraps the call to the package main.  Thus the following two command line invocations are identical:
