@@ -20,7 +20,7 @@ python = "^3.8"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"
-pdoc = "14"
+pdoc = "14.5.1"
 
 [build-system]
 requires = ["poetry-core"]
