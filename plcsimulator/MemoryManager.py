@@ -35,6 +35,9 @@ class MemoryManager(object):
         """
         Constructor
 
+        Note that blen should be a multiple of bits per byte, and if not,
+        blen is rounded up accordingly
+
         :param blen: The number of slots in the bits section
         :type blen: int
         :param w16len: The number of slots in the 16-bit words section
@@ -47,7 +50,14 @@ class MemoryManager(object):
 
         self.lock = Lock()
         self.memspace = self.DEFAULTS['memspace'].copy()
-        self.memspace['bits'] = bytearray(blen)
+
+        # Ensure number of bits are aligned to whole byte lengths
+        bits_nbytes = blen // 8
+
+        if blen % 8 > 0:
+            bits_nbytes += 1
+
+        self.memspace['bits'] = bytearray(bits_nbytes)
         self.memspace['words16'] = bytearray(w16len * 2)
         self.memspace['words32'] = bytearray(w32len * 4)
         self.memspace['words64'] = bytearray(w64len * 8)
