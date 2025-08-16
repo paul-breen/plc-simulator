@@ -20,6 +20,8 @@ import time
 import math
 import random
 
+BITS_PER_BYTE = 8
+
 class IoManager(object):
     """
     IO manager for the PLC simulator
@@ -117,7 +119,7 @@ class IoManager(object):
         range_params = []
         wlen = self.memory_manager.get_section_word_len(conf['memspace']['section'])
         start = self.DEFAULTS['range']['start']
-        stop = 2**(wlen * 8)
+        stop = 2**(wlen * BITS_PER_BYTE)
         step = self.DEFAULTS['range']['step']
 
         try:
@@ -164,6 +166,64 @@ class IoManager(object):
 
         return param
 
+    def get_memspace(self, conf):
+        """
+        Get data from the memory space defined in the given conf
+
+        :param conf: The simulation's memspace configuration
+        :type conf: dict
+        :returns: The memory space data
+        :rtype: bytearray
+        """
+
+        if conf['section'] == 'bits':
+            data = self.memory_manager.get_bits(**conf)
+        else:
+            data = self.memory_manager.get_data(**conf)
+
+        return data
+
+    def set_memspace(self, conf, data):
+        """
+        Set the given data in the memory space defined in the given conf
+
+        :param conf: The simulation's memspace configuration
+        :type conf: dict
+        :param data: The data to be written to the memory space
+        :type data: bytearray
+        """
+
+        if conf['section'] == 'bits':
+            self.memory_manager.set_bits(**conf, data=data)
+        else:
+            self.memory_manager.set_data(**conf, data=data)
+
+    def get_memspace_conf_nrefs(self, conf):
+        """
+        Get the number of references from the given memory space conf
+
+        This can be words or bits depending on the memory space section.
+        The more general `refs` can be used for any memory space section type
+
+        :param conf: The simulation's memspace configuration
+        :type conf: dict
+        :returns: The number of refs (words, bits or refs) from the conf
+        :rtype: int
+        """
+
+        nrefs = 0
+
+        if 'nwords' in conf:
+            nrefs = int(conf['nwords'])
+        elif 'nbits' in conf:
+            nrefs = int(conf['nbits'])
+        elif 'nrefs' in conf:
+            nrefs = int(conf['nrefs'])
+        else:
+            raise ValueError("Unknown memspace ref type: {}".format(conf))
+
+        return nrefs
+
     def run_simulation(self, conf):
         """
         Run the simulation according to its configuration
@@ -184,7 +244,7 @@ class IoManager(object):
             data = self.simulate_data(conf, sources)
 
             if data is not None:
-                self.memory_manager.set_data(**conf['memspace'], data=data)
+                self.set_memspace(conf['memspace'], data)
 
             try:
                 time.sleep(conf['pause'])
@@ -237,19 +297,19 @@ class IoManager(object):
         data = bytearray(0)
 
         wlen = self.memory_manager.get_section_word_len(conf['memspace']['section'])
-        nwords = int(conf['memspace']['nwords'])
+        nrefs = self.get_memspace_conf_nrefs(conf['memspace'])
 
         if conf['function']['type'] == 'counter':
             value = sources['counter']
             sources['counter'] = self.get_next_range_value(conf['function']['range'], value)
-            data = self.value_to_bytes(value, nwords, wlen)
+            data = self.value_to_bytes(value, nrefs, wlen)
         elif conf['function']['type'] == 'binary':
             value = sources['counter']
             sources['counter'] = (value + 1) % 2
-            data = self.value_to_bytes(value, nwords, wlen)
+            data = self.value_to_bytes(value, nrefs, wlen)
         elif conf['function']['type'] == 'static':
             value = int(conf['function']['value'])
-            data = self.value_to_bytes(value, nwords, wlen)
+            data = self.value_to_bytes(value, nrefs, wlen)
         elif conf['function']['type'] in self.DEFAULTS['wave']['types']:
             res = int(self.DEFAULTS['wave']['resolution'])
             value = sources['counter']
@@ -265,30 +325,30 @@ class IoManager(object):
                 w = math.sin((value / res) * math.pi)
                 y = res if w < 0.0 else 2 * res
 
-            data = self.value_to_bytes(y, nwords, wlen)
+            data = self.value_to_bytes(y, nrefs, wlen)
         elif conf['function']['type'] == 'randrange':
             value = random.randrange(*conf['function']['range'])
-            data = self.value_to_bytes(value, nwords, wlen)
+            data = self.value_to_bytes(value, nrefs, wlen)
         elif conf['function']['type'] in self.DEFAULTS['random']['types']:
             res = int(self.DEFAULTS['random']['resolution'])
 
             if conf['function']['type'] == 'lognormal':
                 w = random.lognormvariate(conf['function']['mu'], conf['function']['sigma'])
-                y = int(w * res) % 2**(wlen * 8)  # Avoid OverflowError
+                y = int(w * res) % 2**(wlen * BITS_PER_BYTE)    # Avoid OverflowError
             elif conf['function']['type'] == 'uniform':
                 w = random.uniform(conf['function']['a'], conf['function']['b'])
                 y = int(w * res)
 
-            data = self.value_to_bytes(y, nwords, wlen)
+            data = self.value_to_bytes(y, nrefs, wlen)
         elif conf['function']['type'] == 'copy':
-            data = self.memory_manager.get_data(**conf['source']['memspace'])
+            data = self.get_memspace(conf['source']['memspace'])
         elif conf['function']['type'] == 'transform':
-            buf = self.memory_manager.get_data(**conf['source']['memspace'])
+            buf = self.get_memspace(conf['source']['memspace'])
             word = int.from_bytes(buf, byteorder=self.DEFAULTS['byteorder'])
             value = self.transform_item(word, conf['function']['transform'])
 
             if value is not None:
-                data = self.value_to_bytes(value, nwords, wlen)
+                data = self.value_to_bytes(value, nrefs, wlen)
             else:
                 data = None
  
