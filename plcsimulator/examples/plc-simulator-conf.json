@@ -17,7 +17,7 @@
     },
     "memory_manager": {
         "memspace": {
-            "blen": 0,
+            "blen": 64,
             "w16len": 800,
             "w32len": 0,
             "w64len": 0
@@ -150,6 +150,30 @@
                              "transform": {"in": [11, 80], "out": 0}
                 },
                 "pause": 1
+            },
+            {
+                "id": "byte_0_bit_0_flip",
+                "memspace": {"section": "bits", "addr": 0, "nbits": 1},
+                "function": {"type": "binary"},
+                "pause": 5
+            },
+            {
+                "id": "byte_0_bit_1_flip",
+                "memspace": {"section": "bits", "addr": 1, "nbits": 1},
+                "function": {"type": "binary"},
+                "pause": 2
+            },
+            {
+                "id": "byte_1_fixed_bits_0_to_2",
+                "memspace": {"section": "bits", "addr": 8, "nbits": 8},
+                "function": {"type": "static", "value": 7},
+                "pause": 60
+            },
+            {
+                "id": "byte_2_range_counter_cycling_bits",
+                "memspace": {"section": "bits", "addr": 16, "nbits": 8},
+                "function": {"type": "counter", "range": [255]},
+                "pause": 0.1
             }
         ]
     },

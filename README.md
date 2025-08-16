@@ -1,10 +1,12 @@
 # PLC Simulator
 
-This project provides an extensible PLC simulation environment.  The MemoryManager provides a configurable linear memory space that is independent of any particular model of PLC.  The IoManager supports a number of simulation functions that can be specified to update memory locations in the MemoryManager's memory space.  The FieldbusManager instantiates configured fieldbus-specific objects that simulate the request/response protocols of PLCs.  The fieldbus-specific object to handle incoming requests is mapped by TCP listening port.  The Listener provides a TCP/IP interface with which clients, such as the plc-data-server (PDS), can connect and query simulated PLCs.
+This project provides an extensible PLC simulation environment.  The MemoryManager provides a configurable linear memory space that is independent of any particular model of PLC.  The IoManager supports a number of simulation functions that can be specified to update memory locations in the MemoryManager's memory space.  The FieldbusManager instantiates configured fieldbus-specific objects that simulate the request/response protocols of PLCs.  The fieldbus-specific object to handle incoming requests is mapped by TCP listening port.  The Listener provides a TCP/IP interface with which clients, such as the [plc-data-server](https://github.com/paul-breen/plc-data-server) (PDS), can connect and query simulated PLCs.
+
+See the [API documentation](https://paul-breen.github.io/plc-simulator/) for further details of each of the simulator's components.
 
 ## Install
 
-The package can be installed from PyPI (note the package distribution name):
+The [package](https://pypi.org/project/plc-simulator/) can be installed from PyPI (note the package distribution name):
 
 ```bash
 $ pip install plc-simulator
@@ -27,7 +29,29 @@ $ python -m plcsimulator --help
 
 ## The configuration
 
-This is an example configuration:
+The configuration contains sections that map to components of the simulator.  These sections specify:
+
+* listener: Socket connection parameters such as host and port.
+* fieldbus_manager: A list of available fieldbus-specific modules.  Each module configuration in the list specifies:
+  + The module and class that provides the fieldbus interface.
+  + The TCP port number that maps to the corresponding one specified in the `listener` configuration.
+  * (Optional) static configuration used when instantiating the fieldbus object.
+* memory_manager: The size of the required memory space sections.
+  + blen: The number of bits in the `bits` section.  This should be a multiple of 8 and will be rounded up to be so if necessary.
+  + w16len: The number of 16-bit words in the `words16` section.
+  + w32len: The number of 32-bit words in the `words32` section.
+  + w64len: The number of 64-bit words in the `words64` section.
+* io_manager: A list of simulations to run.  What is specified for each simulation configuration depends on the simulation function, but typically includes:
+  + id: (Optional) A meaningful label which is included in logging output.
+  + memspace: The memory space section name, starting address, and number of references (`nbits` for `bits` section, `nwords` for `words*` sections) that the simulation should read/write to.
+  + source: (Optional) Some simulations require the value from a source `memspace` configuration to act as an input to the simulation function.
+  + function: The function type and any static parameters.
+  + pause: Time (s) to pause between calls of the simulation.
+* logging: A Python logging configuration, provided as input to `logging.config.dictConfig()`.
+ 
+### An example configuration
+
+The following example configuration shows most of the availble options:
 
 ```json
 {
@@ -49,7 +73,7 @@ This is an example configuration:
     },
     "memory_manager": {
         "memspace": {
-            "blen": 0,
+            "blen": 64,
             "w16len": 800,
             "w32len": 0,
             "w64len": 0
@@ -182,6 +206,30 @@ This is an example configuration:
                              "transform": {"in": [11, 80], "out": 0}
                 },
                 "pause": 1
+            },
+            {
+                "id": "byte_0_bit_0_flip",
+                "memspace": {"section": "bits", "addr": 0, "nbits": 1},
+                "function": {"type": "binary"},
+                "pause": 5
+            },
+            {
+                "id": "byte_0_bit_1_flip",
+                "memspace": {"section": "bits", "addr": 1, "nbits": 1},
+                "function": {"type": "binary"},
+                "pause": 2
+            },
+            {
+                "id": "byte_1_fixed_bits_0_to_2",
+                "memspace": {"section": "bits", "addr": 8, "nbits": 8},
+                "function": {"type": "static", "value": 7},
+                "pause": 60
+            },
+            {
+                "id": "byte_2_range_counter_cycling_bits",
+                "memspace": {"section": "bits", "addr": 16, "nbits": 8},
+                "function": {"type": "counter", "range": [255]},
+                "pause": 0.1
             }
         ]
     },
@@ -215,3 +263,4 @@ This is an example configuration:
     }
 }
 ```
+
