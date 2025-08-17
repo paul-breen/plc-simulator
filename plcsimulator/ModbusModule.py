@@ -39,6 +39,16 @@ class ModbusModule(BaseFieldbusModule):
                 'code': 0x03,
                 'base_addr': 40000
             },
+            '0x05': {
+                'name': 'force single coil',
+                'code': 0x05,
+                'base_addr': 00000
+            },
+            '0x06': {
+                'name': 'preset single register',
+                'code': 0x06,
+                'base_addr': 40000
+            },
             '0x0f': {
                 'name': 'force multiple coils',
                 'code': 0x0f,
@@ -92,8 +102,8 @@ class ModbusModule(BaseFieldbusModule):
         # Get the minimum message that is common to all Modbus requests
         self.recv_request_fragment(request, self.DEFAULTS['min_msg_len'])
 
-        # For write requests, we also need to read the data payload.  This
-        # consists of the data length byte and the data
+        # For variable length write requests, we also need to read the data
+        # payload.  This consists of the data length byte and the data
         if request.buf[7] in [self.DEFAULTS['functions']['0x0f']['code'], self.DEFAULTS['functions']['0x10']['code']]:
             msg_nbytes = self.DEFAULTS['min_msg_len'] + 1
             self.recv_request_fragment(request, msg_nbytes)
@@ -118,6 +128,10 @@ class ModbusModule(BaseFieldbusModule):
             self.service_read_coil_status_request(request)
         elif request.buf[7] == self.DEFAULTS['functions']['0x03']['code']:
             self.service_read_holding_registers_request(request)
+        elif request.buf[7] == self.DEFAULTS['functions']['0x05']['code']:
+            self.service_force_single_coil_request(request)
+        elif request.buf[7] == self.DEFAULTS['functions']['0x06']['code']:
+            self.service_preset_single_register_request(request)
         elif request.buf[7] == self.DEFAULTS['functions']['0x0f']['code']:
             self.service_force_multiple_coils_request(request)
         elif request.buf[7] == self.DEFAULTS['functions']['0x10']['code']:
@@ -218,6 +232,93 @@ class ModbusModule(BaseFieldbusModule):
             response.buf[0:8] = request.buf[0:8]
             response.buf[8] = data_nbytes
             response.buf[9:9+data_nbytes+1] = data
+        except IndexError as e:
+            # Request exceeds bounds of the memory space.  Inform the client
+            logging.error(e)
+            response = self.construct_exception_response(request, 'illegal_data_address')
+
+        logging.debug('{} response: {}'.format(log_prefix, response.buf))
+        self.conn.sendall(response.buf)
+
+        return response
+
+    def service_force_single_coil_request(self, request):
+        """
+        Handle a force-single-coil request
+
+        * Write the specified coil value to this PLC's memory space.
+        * Return the Modbus response to the client.
+        * Return a Modbus exception response if the request was invalid.
+
+        :param request: The incoming request message
+        :type request: plcsimulator.FieldbusMessage.FieldbusMessage
+        :returns: The response to return to the client
+        :rtype: plcsimulator.FieldbusMessage.FieldbusMessage
+        """
+
+        log_prefix = '{}: {}:'.format(self.id, self.DEFAULTS['functions']['0x05']['name'])
+        logging.debug('{}: request: {}'.format(log_prefix, request.buf))
+
+        # As this is a request to write to a single coil, the request is a
+        # fixed length.  Instead of the word following the address containing
+        # number of refs, it contains a constant: 0xff00 = On, 0x0000 = Off.
+        # Note: We still reverse the data payload so the addressed bit = 1 or 0
+        addr = request.make_word(8, 9)
+        nbits = 1
+        data_nbytes = 2
+        data = request.buf[10:10+data_nbytes]
+        data.reverse()
+
+        try:
+            self.memory_manager.set_bits(section=self.DEFAULTS['bit_mem_section'], addr=addr, nbits=nbits, data=data)
+
+            logging.debug('{} addr = {}, nbits = {}, data_nbytes = {}, data = {}'.format(log_prefix, addr, nbits, data_nbytes, data))
+
+            # A successful response is an echo of the request
+            response = FieldbusMessage(len(request.buf))
+            response.buf = request.buf.copy()
+        except IndexError as e:
+            # Request exceeds bounds of the memory space.  Inform the client
+            logging.error(e)
+            response = self.construct_exception_response(request, 'illegal_data_address')
+
+        logging.debug('{} response: {}'.format(log_prefix, response.buf))
+        self.conn.sendall(response.buf)
+
+        return response
+
+    def service_preset_single_register_request(self, request):
+        """
+        Handle a preset-single-register request
+
+        * Write the specified register value to this PLC's memory space.
+        * Return the Modbus response to the client.
+        * Return a Modbus exception response if the request was invalid.
+
+        :param request: The incoming request message
+        :type request: plcsimulator.FieldbusMessage.FieldbusMessage
+        :returns: The response to return to the client
+        :rtype: plcsimulator.FieldbusMessage.FieldbusMessage
+        """
+
+        log_prefix = '{}: {}:'.format(self.id, self.DEFAULTS['functions']['0x06']['name'])
+        logging.debug('{}: request: {}'.format(log_prefix, request.buf))
+
+        # As this is a request to write to a single register, the request is a
+        # fixed length
+        addr = request.make_word(8, 9)
+        nwords = 1
+        data_nbytes = 2
+        data = request.buf[10:10+data_nbytes]
+
+        try:
+            self.memory_manager.set_data(section=self.DEFAULTS['word_mem_section'], addr=addr, nwords=nwords, data=data)
+
+            logging.debug('{} addr = {}, nwords = {}, data_nbytes = {}, data = {}'.format(log_prefix, addr, nwords, data_nbytes, data))
+
+            # A successful response is an echo of the request
+            response = FieldbusMessage(len(request.buf))
+            response.buf = request.buf.copy()
         except IndexError as e:
             # Request exceeds bounds of the memory space.  Inform the client
             logging.error(e)
