@@ -19,6 +19,7 @@ import threading
 import time
 import math
 import random
+import operator
 
 BITS_PER_BYTE = 8
 
@@ -351,7 +352,14 @@ class IoManager(object):
                 data = self.value_to_bytes(value, nrefs, wlen)
             else:
                 data = None
- 
+        elif conf['function']['type'] == 'operation':
+            value = self.perform_operation(conf)
+
+            if value is not None:
+                data = self.value_to_bytes(value, nrefs, wlen)
+            else:
+                data = None
+
         return data
 
     def value_to_bytes(self, value, nwords, wlen):
@@ -436,4 +444,68 @@ class IoManager(object):
                 item = t_out
 
         return item
+
+    def perform_operation(self, conf):
+        """
+        Perform the operation specified in the simulation configuration
+
+        The operation to run is determined by the `operator` attribute.
+        This must be a valid operator from the `operator` module of the
+        standard library.  Note that not all standard operators can be
+        run and may throw an exception (e.g. `OverflowError`).
+
+        The `operands` list is parsed from the simulation configuration
+        and passed (in order) to the specified operator.  The number of
+        operands in the list must match that required by the operator.
+
+        Each operand is a `source` object.  For conformity, the operand
+        definition may be in the `source` attribute of a surrounding
+        object.  Here, that is just noise though, so isn't required.
+        If the operand is in a surrounding object, then it is extracted.
+
+        That is, the conforming long form:
+
+        ```json
+        "operands": [
+            {"source": {"memspace": {"section": "words16", "addr": 0, "nwords": 1}}},
+            {"source": {"value": 2}}
+        ],
+        ```
+
+        can be shortened to:
+
+        ```json
+        "operands": [
+            {"memspace": {"section": "words16", "addr": 0, "nwords": 1}},
+            {"value": 2}
+        ],
+        ```
+
+        without any loss of functionality.
+
+        :param conf: The simulation configuration
+        :type conf: dict
+        :returns: The result of the operation
+        :rtype: number
+        """
+
+        fn = getattr(operator, conf['function']['operator'])
+        args = []
+
+        for operand in conf['operands']:
+            # Get the operand definition from any optional source object
+            if 'source' in operand:
+                operand = operand['source']
+
+            if 'value' in operand:
+                args.append(int(operand['value']))
+            elif 'memspace' in operand:
+                buf = self.get_memspace(operand['memspace'])
+                args.append(int.from_bytes(buf, byteorder=self.DEFAULTS['byteorder']))
+            else:
+                raise ValueError("Unknown operand type: {}".format(operand))
+
+        result = fn(*args)
+
+        return result
 
