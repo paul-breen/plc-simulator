@@ -1,5 +1,17 @@
 # Changelog
 
+## [v0.5.0] - 2025-08-17
+
+### Added
+
+- Add support for reading/writing coils (bits) in the Modbus module
+- Add support for a general operation function that applies a standard operator
+
+### Changed
+
+- Ensure that number of bits is rounded up to a multiple of 8 in the constructor
+- Update example configuration and docs to include details of bits memspace support and the operation simulation function
+
 ## [v0.4.0] - 2025-05-19
 
 ### Added
