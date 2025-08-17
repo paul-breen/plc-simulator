@@ -35,7 +35,7 @@ The configuration contains sections that map to components of the simulator.  Th
 * fieldbus_manager: A list of available fieldbus-specific modules.  Each module configuration in the list specifies:
   + The module and class that provides the fieldbus interface.
   + The TCP port number that maps to the corresponding one specified in the `listener` configuration.
-  * (Optional) static configuration used when instantiating the fieldbus object.
+  * (Optional) Static configuration used when instantiating the fieldbus object.
 * memory_manager: The size of the required memory space sections.
   + blen: The number of bits in the `bits` section.  This should be a multiple of 8 and will be rounded up to be so if necessary.
   + w16len: The number of 16-bit words in the `words16` section.
@@ -45,13 +45,14 @@ The configuration contains sections that map to components of the simulator.  Th
   + id: (Optional) A meaningful label which is included in logging output.
   + memspace: The memory space section name, starting address, and number of references (`nbits` for `bits` section, `nwords` for `words*` sections) that the simulation should read/write to.
   + source: (Optional) Some simulations require the value from a source `memspace` configuration to act as an input to the simulation function.
+  + operands: (Optional) The `operation` function-type simulation requires a list of operands.  An operand can either be a constant value or the value from a source `memspace` configuration.  The operator name must be an operator from the Python [operator library](https://docs.python.org/3/library/operator.html).
   + function: The function type and any static parameters.
   + pause: Time (s) to pause between calls of the simulation.
 * logging: A Python logging configuration, provided as input to `logging.config.dictConfig()`.
  
 ### An example configuration
 
-The following example configuration shows most of the availble options:
+The following example configuration shows most of the available options:
 
 ```json
 {
@@ -206,6 +207,38 @@ The following example configuration shows most of the availble options:
                              "transform": {"in": [11, 80], "out": 0}
                 },
                 "pause": 1
+            },
+            {
+                "id": "op_arg_a",
+                "memspace": {"section": "words16", "addr": 30, "nwords": 1},
+                "function": {"type": "counter", "range": [1, 11]},
+                "pause": 1
+            },
+            {
+                "id": "op_arg_b",
+                "memspace": {"section": "words16", "addr": 31, "nwords": 1},
+                "function": {"type": "counter", "range": [1, 11]},
+                "pause": 1
+            },
+            {
+                "id": "op_add",
+                "memspace": {"section": "words16", "addr": 32, "nwords": 1},
+                "operands": [
+                    {"memspace": {"section": "words16", "addr": 30, "nwords": 1}},
+                    {"memspace": {"section": "words16", "addr": 31, "nwords": 1}}
+                ],
+                "function": {"type": "operation", "operator": "add"},
+                "pause": 0.5
+            },
+            {
+                "id": "op_floordiv",
+                "memspace": {"section": "words16", "addr": 33, "nwords": 1},
+                "operands": [
+                    {"memspace": {"section": "words16", "addr": 30, "nwords": 1}},
+                    {"value": 2}
+                ],
+                "function": {"type": "operation", "operator": "floordiv"},
+                "pause": 0.5
             },
             {
                 "id": "byte_0_bit_0_flip",

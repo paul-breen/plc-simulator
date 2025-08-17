@@ -152,6 +152,38 @@
                 "pause": 1
             },
             {
+                "id": "op_arg_a",
+                "memspace": {"section": "words16", "addr": 30, "nwords": 1},
+                "function": {"type": "counter", "range": [1, 11]},
+                "pause": 1
+            },
+            {
+                "id": "op_arg_b",
+                "memspace": {"section": "words16", "addr": 31, "nwords": 1},
+                "function": {"type": "counter", "range": [1, 11]},
+                "pause": 1
+            },
+            {
+                "id": "op_add",
+                "memspace": {"section": "words16", "addr": 32, "nwords": 1},
+                "operands": [
+                    {"memspace": {"section": "words16", "addr": 30, "nwords": 1}},
+                    {"memspace": {"section": "words16", "addr": 31, "nwords": 1}}
+                ],
+                "function": {"type": "operation", "operator": "add"},
+                "pause": 0.5
+            },
+            {
+                "id": "op_floordiv",
+                "memspace": {"section": "words16", "addr": 33, "nwords": 1},
+                "operands": [
+                    {"memspace": {"section": "words16", "addr": 30, "nwords": 1}},
+                    {"value": 2}
+                ],
+                "function": {"type": "operation", "operator": "floordiv"},
+                "pause": 0.5
+            },
+            {
                 "id": "byte_0_bit_0_flip",
                 "memspace": {"section": "bits", "addr": 0, "nbits": 1},
                 "function": {"type": "binary"},
