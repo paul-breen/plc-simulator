@@ -191,6 +191,7 @@ class ModbusModule(BaseFieldbusModule):
             response.buf[0:8] = request.buf[0:8]
             response.buf[8] = data_nbytes
             response.buf[9:9+data_nbytes+1] = data
+            response.buf[5] = len(response.buf[6:])
         except IndexError as e:
             # Request exceeds bounds of the memory space.  Inform the client
             logging.error(e)
@@ -232,6 +233,7 @@ class ModbusModule(BaseFieldbusModule):
             response.buf[0:8] = request.buf[0:8]
             response.buf[8] = data_nbytes
             response.buf[9:9+data_nbytes+1] = data
+            response.buf[5] = len(response.buf[6:])
         except IndexError as e:
             # Request exceeds bounds of the memory space.  Inform the client
             logging.error(e)
@@ -277,6 +279,7 @@ class ModbusModule(BaseFieldbusModule):
             # A successful response is an echo of the request
             response = FieldbusMessage(len(request.buf))
             response.buf = request.buf.copy()
+            response.buf[5] = len(response.buf[6:])
         except IndexError as e:
             # Request exceeds bounds of the memory space.  Inform the client
             logging.error(e)
@@ -319,6 +322,7 @@ class ModbusModule(BaseFieldbusModule):
             # A successful response is an echo of the request
             response = FieldbusMessage(len(request.buf))
             response.buf = request.buf.copy()
+            response.buf[5] = len(response.buf[6:])
         except IndexError as e:
             # Request exceeds bounds of the memory space.  Inform the client
             logging.error(e)
@@ -361,6 +365,7 @@ class ModbusModule(BaseFieldbusModule):
 
             response = FieldbusMessage(12)
             response.buf[0:12] = request.buf[0:12]
+            response.buf[5] = len(response.buf[6:])
         except IndexError as e:
             # Request exceeds bounds of the memory space.  Inform the client
             logging.error(e)
@@ -400,6 +405,7 @@ class ModbusModule(BaseFieldbusModule):
 
             response = FieldbusMessage(12)
             response.buf[0:12] = request.buf[0:12]
+            response.buf[5] = len(response.buf[6:])
         except IndexError as e:
             # Request exceeds bounds of the memory space.  Inform the client
             logging.error(e)
@@ -427,6 +433,7 @@ class ModbusModule(BaseFieldbusModule):
 
         # Unknown or unsupported function.  Inform the client
         response = self.construct_exception_response(request, 'illegal_function')
+        response.buf[5] = len(response.buf[6:])
         self.conn.sendall(response.buf)
 
         return response
