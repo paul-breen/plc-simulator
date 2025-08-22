@@ -101,5 +101,5 @@ class FieldbusManager(object):
 
         plc = copy.copy(self.get_module_by_port(port))
         plc.conn = current_conn
-        plc.process_request()
+        plc.service_client()
 

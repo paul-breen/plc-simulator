@@ -11,6 +11,10 @@ PLC simulator base fieldbus module
 This module contains the base class for fieldbus classes.  Fieldbus-specific classes should inherit from this class.
 """
 
+import logging
+import socket
+import select
+
 class BaseFieldbusModule(object):
     """
     Base class for fieldbus classes
@@ -50,4 +54,54 @@ class BaseFieldbusModule(object):
 
         self.conf = conf
         self.memory_manager = memory_manager
+
+    def service_client(self):
+        """
+        Service the client
+
+        This is the entry point for a new backend from the FieldbusManager
+
+        * If this Fieldbus module's configuration has `"one_shot": true`,
+          then a single request is handled and the connection is closed.
+          Otherwise, the connection is kept open and multiple requests are
+          serviced until the client closes the connection.
+        """
+
+        try:
+            if 'one_shot' in self.conf and self.conf['one_shot'] is True:
+                retval = self.handle_request()
+            else:
+                while True:
+                    retval = self.handle_request()
+
+                    if retval != 0:
+                        break
+        except Exception as e:
+            logging.debug("Error detected servicing client: {}".format(e))
+
+        # Ensure we close the socket
+        logging.debug("Closing backend")
+        self.conn.shutdown(socket.SHUT_RDWR)
+        self.conn.close()
+
+    def handle_request(self, timeout=60):
+        """
+        Handle an incoming request
+
+        Wait until a client sends a request, then process it
+
+        :param timeout: Timeout for checking for an incoming request
+        :type timeout: int
+        :returns: Zero to continue to service requests or non-zero if done
+        :rtype: int
+        """
+
+        retval = 0
+        rfds, wfds, efds = select.select([self.conn], [], [], timeout)
+
+        if len(rfds) > 0:
+            if self.conn in rfds:
+                retval = self.process_request()
+
+        return retval
 

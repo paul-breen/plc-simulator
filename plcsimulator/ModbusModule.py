@@ -87,7 +87,9 @@ class ModbusModule(BaseFieldbusModule):
 
         request.recv_fragment(self.conn, nbytes, flags=socket.MSG_WAITALL)
 
-        if len(request.buf) < nbytes:
+        # If request length is exactly zero, this might be the client closing
+        # the connection.  This is not an error
+        if len(request.buf) > 0 and len(request.buf) < nbytes:
             raise ValueError('Request length too short (received {} bytes, expected {} bytes)'.format(len(request.buf), nbytes))
 
         return request
@@ -100,17 +102,19 @@ class ModbusModule(BaseFieldbusModule):
         request = FieldbusMessage(0)
 
         # Get the minimum message that is common to all Modbus requests
-        self.recv_request_fragment(request, self.DEFAULTS['min_msg_len'])
+        msg_nbytes = self.DEFAULTS['min_msg_len']
+        self.recv_request_fragment(request, msg_nbytes)
 
-        # For variable length write requests, we also need to read the data
-        # payload.  This consists of the data length byte and the data
-        if request.buf[7] in [self.DEFAULTS['functions']['0x0f']['code'], self.DEFAULTS['functions']['0x10']['code']]:
-            msg_nbytes = self.DEFAULTS['min_msg_len'] + 1
-            self.recv_request_fragment(request, msg_nbytes)
-            data_nbytes = request.buf[12]
+        if len(request.buf) >= msg_nbytes:
+            # For variable length write requests, we also need to read the data
+            # payload.  This consists of the data length byte and the data
+            if request.buf[7] in [self.DEFAULTS['functions']['0x0f']['code'], self.DEFAULTS['functions']['0x10']['code']]:
+                msg_nbytes += 1
+                self.recv_request_fragment(request, msg_nbytes)
+                data_nbytes = request.buf[12]
 
-            msg_nbytes = self.DEFAULTS['min_msg_len'] + 1 + data_nbytes
-            self.recv_request_fragment(request, msg_nbytes)
+                msg_nbytes += data_nbytes
+                self.recv_request_fragment(request, msg_nbytes)
 
         return request
 
@@ -120,24 +124,37 @@ class ModbusModule(BaseFieldbusModule):
 
         The request is passed to a function to handle the Modbus function
         contained in the request message
+
+        Note that the request may be zero-length if the client is closing
+        the socket.  This is not an error.  In this case, return non-zero
+        to signal that this backend should close this end of the socket
+
+        :returns: Zero if a valid request was received or non-zero otherwise
+        :rtype: int
         """
 
+        retval = 0
         request = self.get_request()
 
-        if request.buf[7] == self.DEFAULTS['functions']['0x01']['code']:
-            self.service_read_coil_status_request(request)
-        elif request.buf[7] == self.DEFAULTS['functions']['0x03']['code']:
-            self.service_read_holding_registers_request(request)
-        elif request.buf[7] == self.DEFAULTS['functions']['0x05']['code']:
-            self.service_force_single_coil_request(request)
-        elif request.buf[7] == self.DEFAULTS['functions']['0x06']['code']:
-            self.service_preset_single_register_request(request)
-        elif request.buf[7] == self.DEFAULTS['functions']['0x0f']['code']:
-            self.service_force_multiple_coils_request(request)
-        elif request.buf[7] == self.DEFAULTS['functions']['0x10']['code']:
-            self.service_preset_multiple_registers_request(request)
+        if len(request.buf) == 0:           # Client closing socket
+            retval = -1
         else:
-            self.service_unknown_request(request)
+            if request.buf[7] == self.DEFAULTS['functions']['0x01']['code']:
+                self.service_read_coil_status_request(request)
+            elif request.buf[7] == self.DEFAULTS['functions']['0x03']['code']:
+                self.service_read_holding_registers_request(request)
+            elif request.buf[7] == self.DEFAULTS['functions']['0x05']['code']:
+                self.service_force_single_coil_request(request)
+            elif request.buf[7] == self.DEFAULTS['functions']['0x06']['code']:
+                self.service_preset_single_register_request(request)
+            elif request.buf[7] == self.DEFAULTS['functions']['0x0f']['code']:
+                self.service_force_multiple_coils_request(request)
+            elif request.buf[7] == self.DEFAULTS['functions']['0x10']['code']:
+                self.service_preset_multiple_registers_request(request)
+            else:
+                self.service_unknown_request(request)
+
+        return retval
 
     def construct_exception_response(self, request, excode):
         """
