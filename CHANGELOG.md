@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.6.0] - 2025-08-22
+
+### Fixed
+
+- Fix the Length field in the Modbus TCP/IP header response
+
+### Changed
+
+- Update service backends to support long-lived connections
+
 ## [v0.5.0] - 2025-08-17
 
 ### Added
